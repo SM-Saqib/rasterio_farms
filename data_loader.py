@@ -8,7 +8,10 @@ from shapely.geometry import Polygon
 import ast
 import numpy as np
 from _datetime import datetime, timedelta
-class data_loader():
+class DataLoader():
+    '''
+    the data loader class loads the data from the csv file and loads the tiff images
+    '''
     def __init__(self, path_dir=""):
         self.path_dir = path_dir
         self.df = pd.DataFrame()
@@ -17,12 +20,16 @@ class data_loader():
 
 
     def load_rasterio(self,image_path="",polygon_list=[]):
-        ''' Load a raster image and return a numpy array '''
+        ''' Load a raster image and return a numpy array , it works by using rasterio to load the image and then mask it with
+          interest area polygon
+        Input: image_path, polygon_list
+        Output: numpy array
+        '''
+
 
         
         #get polygon from list of coordinates
         shape = Polygon(polygon_list)
-        # print(shape)
         
 
         with rasterio.open(image_path) as src:
@@ -42,11 +49,12 @@ class data_loader():
 
 
 
-
-        # return df_partial
-
-
     def load_coordinates(self,csv_path = ""):
+        '''
+        load the coordinates from the csv file
+        Input: csv_path
+        Output: list of coordinates
+        '''
         df = pd.read_csv(csv_path)
         #from dataframe, only get the Coordinates
         coordinates = df['Coordinates']
@@ -65,6 +73,11 @@ class data_loader():
             yield coordinate,crop,date_sowing,date_harvesting
 
     def select_color(self,path):
+        '''
+        select the color from the path
+        Input: path
+        Output: color
+        '''
         if "red" in path:
             self.color = "red"
         elif "nir" in path:
@@ -75,12 +88,23 @@ class data_loader():
             self.color = "blue"
 
     def get_date_from_path(self,path):
+        '''
+        get the date from the path
+        Input: path
+        Output: date
+        '''
+
         return path.split("/")[-1].split(".")[0]
 
     def load_tiff(self,path_dir):
-        print("here")
+        '''
+        load the tiff images from the directory
+        Input: path_dir
+        Output: None
+        '''
 
-        for i,crop,date_sowing,date_harvesting in self.load_coordinates("/media/saqib/VolumeD/mywork/engineer-take-home/farms.csv"):
+
+        for i,crop,date_sowing,date_harvesting in self.load_coordinates(path_dir+"coordinates.csv"):
 
             for root, dir, files in os.walk(path_dir):
                 for file in files:
@@ -93,7 +117,6 @@ class data_loader():
                     if not file.endswith(".tiff"):
                         continue
                     
-                    # print(file)
                     all_color_paths = self.replace_color_path(os.path.join(root,file))
                     
                     data_red = self.load_rasterio(all_color_paths["red"],i)
@@ -140,7 +163,6 @@ class data_loader():
 
         self.linear_interpolation_missing_dates()
         np_data = self.df_to_numpy()
-        print(np_data)
 
 
                     
@@ -165,9 +187,7 @@ class data_loader():
             df_pixel = df_pixel.dropna()
             complete_df = pd.concat([complete_df,df_pixel],axis=0)
 
-        # complete_df.to_csv("complete_df.csv")
-        # print(len(self.df))
-        # print(len(complete_df))
+
         #remove all rows where date is not in the sowing and harvesting dates
         complete_df = complete_df[complete_df['date']>=complete_df['date_sowing']]
         complete_df = complete_df[complete_df['date']<=complete_df['date_harvesting']]
@@ -185,7 +205,6 @@ class data_loader():
         #find difference between consecutive dates using datetime
         date_diff = [datetime.strptime(dates[i+1],'%Y-%m-%d') - datetime.strptime(dates[i],'%Y-%m-%d') for i in range(len(dates)-1)]
         min_diff = min(date_diff)
-        print(date_diff)
         #find all dates that are not evenly spaced in time
         dates_to_interpolate = [dates[i] for i in range(len(dates)-1) if date_diff[i] != min_diff]
 
@@ -233,15 +252,9 @@ class data_loader():
         
 
 if __name__ == "__main__":
-    obj = data_loader()
+    obj = DataLoader()
     obj.load_tiff("images/red/")
 
-    # print(obj.df)
     #group by pixels and date
     obj.get_df().to_csv("data_interpolated.csv",index=False)
 
-#         # print(i)
-
-# #test replace color path function
-# obj = data_loader()
-# # obj.replace_color_path("images/2019-01-01_red.tiff")
