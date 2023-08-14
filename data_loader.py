@@ -234,7 +234,7 @@ class data_loader():
 
 if __name__ == "__main__":
     obj = data_loader()
-    obj.load_tiff("/media/saqib/VolumeD/mywork/engineer-take-home/images/red/")
+    obj.load_tiff("images/red/")
 
     # print(obj.df)
     #group by pixels and date
@@ -244,4 +244,4 @@ if __name__ == "__main__":
 
 # #test replace color path function
 # obj = data_loader()
-# # obj.replace_color_path("/media/saqib/VolumeD/mywork/engineer-take-home/images/2019-01-01_red.tiff")
+# # obj.replace_color_path("images/2019-01-01_red.tiff")
